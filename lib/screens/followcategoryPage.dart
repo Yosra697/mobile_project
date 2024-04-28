@@ -1,3 +1,4 @@
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_project/services/categoryService.dart';
 import 'package:mobile_project/screens/login_page.dart';
@@ -21,6 +22,10 @@ class _FollowCategoryPageState extends State<FollowCategoryPage> {
     super.initState();
     _email = widget.email;
     _loadCategories();
+  }
+
+  String replaceSpacesWithUnderscores(String input) {
+    return input.replaceAll(' ', '_');
   }
 
   Future<void> _loadCategories() async {
@@ -113,12 +118,21 @@ class _FollowCategoryPageState extends State<FollowCategoryPage> {
                           return TextButton(
                             onPressed: () async {
                               if (isFollowing) {
+                                await FirebaseMessaging.instance
+                                    .unsubscribeFromTopic(
+                                        replaceSpacesWithUnderscores(category));
                                 await _categoryService.removeCategoryFromUser(
-                                    _email,
-                                    category); // Use _email instead of widget.email
+                                    _email, category);
                               } else {
-                                await _categoryService.addCategoryToUser(_email,
-                                    category); // Use _email instead of widget.email
+                                await FirebaseMessaging.instance
+                                    .subscribeToTopic(
+                                        replaceSpacesWithUnderscores(category))
+                                    .then((value) {
+                                  print(replaceSpacesWithUnderscores(category));
+                                });
+
+                                await _categoryService.addCategoryToUser(
+                                    _email, category);
                               }
                               setState(() {});
                             },

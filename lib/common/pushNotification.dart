@@ -19,7 +19,6 @@ class PushNotifications {
     );
 
     final token = await _firebaseMessaging.getToken();
-    print("==================================================");
     print(token);
   }
 

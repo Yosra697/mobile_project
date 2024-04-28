@@ -1,4 +1,7 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_project/dialogs/addPostModalDialog.dart';
 import 'package:mobile_project/dialogs/deletePostDialog.dart';
@@ -126,6 +129,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     );
   }
 
+  String replaceSpacesWithUnderscores(String input) {
+    return input.replaceAll(' ', '_');
+  }
+
   void _showAddPostModal(BuildContext context) {
     showDialog(
       context: context,
@@ -133,11 +140,51 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         categoryName: widget.category,
         onAdd: (String title, String message, String categoryName) async {
           await _postService.addPost(title, message, categoryName);
-          // Refresh the posts list after adding a new post
+
+          // Send notification to the topic
+          await _sendNotificationToTopic(
+              replaceSpacesWithUnderscores(categoryName), title);
+
           _loadPosts();
         },
       ),
     );
+  }
+
+  Future<void> _sendNotificationToTopic(String topic, String title) async {
+    try {
+      final String serverKey =
+          'AAAAozrqbCM:APA91bFADO_pnZAt7YcoS5zXA5WlLK225yfseFNZp1947zFqIQKemZBkBksLf7hJh26Mx0x86FbxYzqXcqM2aL_5nLovm7wEH_iQkswNPekfN1xxiR8-HYbl8Ga9T6XZbjGtMkmwUXXs';
+      final String fcmUrl = 'https://fcm.googleapis.com/fcm/send';
+
+      // Notification payload
+      var notification = {
+        'notification': {
+          'title': '$title',
+          'body': 'A new post has been added to $topic.',
+        },
+        'to': '/topics/$topic', // Specify the topic
+      };
+
+      // Send the notification via HTTP POST request
+      final response = await http.post(
+        Uri.parse(fcmUrl),
+        headers: <String, String>{
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+        body: jsonEncode(notification),
+      );
+
+      if (response.statusCode == 200) {
+        print('Notification sent successfully');
+      } else {
+        print(
+            'Failed to send notification. Status code: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error sending notification: $e');
+    }
   }
 
   void logout(BuildContext context) async {

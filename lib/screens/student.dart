@@ -1,8 +1,14 @@
+import 'dart:convert';
+
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
+import 'package:mobile_project/common/pushNotification.dart';
 import 'package:mobile_project/entity/post.dart';
+import 'package:mobile_project/main.dart';
 import 'package:mobile_project/screens/followcategoryPage.dart';
 import 'package:mobile_project/screens/login_page.dart';
 import 'package:mobile_project/services/postService.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class Student extends StatefulWidget {
   final String email; // Add email as a parameter
@@ -17,11 +23,53 @@ class _StudentState extends State<Student> {
   late List<Post> _posts = []; // Change to hold Post objects
   late String _email = ''; // Declare a variable to hold the email
 
+  late FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin;
+
   @override
   void initState() {
     super.initState();
     _email = widget.email;
-    _loadPosts(); // Change method name
+    _loadPosts();
+    _configureFirebase();
+  }
+
+  void _configureFirebase() {
+    PushNotifications.init();
+    FirebaseMessaging.onBackgroundMessage(_firebaseBackgroundMessage);
+    _handleBackgroundNotificationTapped();
+    _handleForegroundNotifications();
+  }
+
+  void _handleBackgroundNotificationTapped() {
+    FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
+      if (message.notification != null) {
+        print("Background Notification Tapped");
+        navigatorKey.currentState!.pushNamed("/student", arguments: message);
+      }
+    });
+  }
+
+  void _handleForegroundNotifications() {
+    FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+      String payloadData = jsonEncode(message.data);
+      print("Got a message in foreground");
+      if (message.notification != null) {
+        PushNotifications.showSimpleNotification(
+            title: message.notification!.title!,
+            body: message.notification!.body!,
+            payload: payloadData);
+      }
+    });
+  }
+
+  // Firebase background message handler
+  Future<void> _firebaseBackgroundMessage(RemoteMessage message) async {
+    print("Message from push notification is ${message.data}");
+    String payloadData = jsonEncode(message.data);
+    PushNotifications.showSimpleNotification(
+        title: message.notification!.title!,
+        body: message.notification!.body!,
+        payload: payloadData);
   }
 
   Future<void> _loadPosts() async {

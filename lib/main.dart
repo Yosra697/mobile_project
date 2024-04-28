@@ -1,22 +1,11 @@
-import 'dart:convert';
-
 import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:mobile_project/common/pushNotification.dart';
 import 'package:mobile_project/screens/student.dart';
 import 'package:mobile_project/screens/teacher.dart';
 import 'package:mobile_project/screens/followcategoryPage.dart';
 import 'package:mobile_project/screens/login_page.dart';
 import 'package:mobile_project/screens/sign_up_page.dart';
 import 'package:mobile_project/splash_screen/splash_screen.dart';
-
-// function to lisen to background changes
-Future _firebaseBackgroundMessage(RemoteMessage message) async {
-  if (message.notification != null) {
-    print("Some notification Received");
-  }
-}
 
 bool isStudentConnected = false;
 final navigatorKey = GlobalKey<NavigatorState>();
@@ -37,8 +26,7 @@ Future main() async {
       projectId: projectId,
     ),
   );
-  // Initialize push notifications
-  await PushNotifications.init();
+
   runApp(MyApp());
 }
 
